@@ -1,0 +1,34 @@
+---
+in_dir: /tmp/pf/rename/in
+out_dir: /tmp/pf/rename/out
+mapping:
+  3a:
+    dir: 3a
+    file: 3a
+    key: Vorsorgekonto 3a
+    idx: 2
+  education:
+    dir: Ausbildungskonto
+    file: ausbildung
+    key: Ausbildungskonto
+    idx: 1
+  deposito:
+    dir: Depositokonto
+    file: deposito
+    key: Depositokonto
+    idx: 1
+  savings:
+    dir: Sparkonto
+    file: sparkonto
+    key: Sparkonto
+    idx: 1
+  info:
+    dir: Verarbeitungsmeldungen
+    file: vm
+    key: Verarbeitungsmeldung
+    idx: 1
+  confirmation:
+    dir: Zahlungsbestätigungen
+    file: zb
+    key: Zahlungsbestätigung
+    idx: 1

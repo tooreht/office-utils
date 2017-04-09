@@ -1,0 +1,5 @@
+---
+archive_name: PostFinance
+archive_format: gztar
+archive_dir: /tmp/pf/archive  # /tmp/sync/admin/Financial Institutions/PostFinance
+extract_dir: /tmp/pf/rename/in
