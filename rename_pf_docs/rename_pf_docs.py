@@ -13,6 +13,7 @@ This script renames downloaded documents form PostFinance e-banking based on its
   e.g.: 'rep302565461_20140101_p8803.pdf' => 'ausbildung_20140101.pdf'
 
 It detects the type by searching for a string in the PDF document (e.g. "Ausbildungskonto").
+It renames and moves the files to a directory structure with subfolders for each type.
 See detect_doc_type fn below.
 
 Resources:
@@ -22,28 +23,21 @@ Resources:
 """
 
 import argparse
-import sys
 import os
+import operator
+import shutil
+import six
+import sys
 
 from distutils.util import strtobool
 from StringIO import StringIO
 
-try:
-    basestring
-except NameError:
-    # python 3 unicode text
-    text_type = str
-else:
-    # python 2 unicode text
-    text_type = unicode
 
-# Support Python 2 and 3 input
-# Default to Python 3's input()
-get_input = input
+# CONSTANTS
 
-# If this is Python 2, use raw_input()
-if sys.version_info[:2] <= (2, 7):
-    get_input = raw_input
+TMP_DIR = os.path.join(os.sep, 'tmp', 'rename_pf_docs')
+IN_DIR = os.path.join(TMP_DIR, 'in')
+OUT_DIR = os.path.join(TMP_DIR, 'out')
 
 
 def parsePDF(path):
@@ -90,20 +84,20 @@ def parsePDF(path):
 
 def detect_doc_type(text, parts, ext):
     text = unicode(text, errors='replace')
-    if 'Ausbildungskonto' in text:
-        fmt, v = 'ausbildung_{}', (parts[1],)
-    elif 'Sparkonto' in text:
-        fmt, v = 'sparkonto_{}', (parts[1],)
+    if 'Vorsorgekonto 3a' in text:
+        fmt, v = os.path.join('3a', '3a_{}'), (parts[2],)
+    elif 'Ausbildungskonto' in text:
+        fmt, v = os.path.join('Ausbildungskonto', 'ausbildung_{}'), (parts[1],)
     elif 'Depositokonto' in text:
-        fmt, v = 'deposito_{}', (parts[1],)
+        fmt, v = os.path.join('Depositokonto', 'deposito_{}'), (parts[1],)
+    elif 'Sparkonto' in text:
+        fmt, v = os.path.join('Sparkonto', 'sparkonto_{}'), (parts[1],)
     elif 'Verarbeitungsmeldung' in text:
-        fmt, v = 'vm_{}', (parts[1],)
+        fmt, v = os.path.join('Verarbeitungsmeldungen', 'vm_{}'), (parts[1],)
     elif 'Zahlungsbestätigung' in text:
-        fmt, v = 'zb_{}', (parts[1],)
-    elif 'Vorsorgekonto 3a' in text:
-        fmt, v = '3a_{}', (parts[2],)
+        fmt, v = os.path.join('Zahlungsbestätigungen', 'zb_{}'), (parts[1],)
     else:
-        fmt, v = 'misc_{}', (parts[1],)
+        fmt, v = os.path.join('Misc', 'misc_{}'), (parts[1],)
 
     if 'Zinsabschluss' in text:
         fmt += '_zinsabschluss'
@@ -127,32 +121,80 @@ def query_yes_no(question, default=None):
                 return default
             print("Please respond with 'y' or 'n'.")
 
+def rename_file(file):
+    first_page = parsePDF(file)[0]  # The doc type is on the first page
+
+    directory, filename = os.path.split(file)
+    basename, file_extension = os.path.splitext(filename)
+    parts = basename.split('_')
+    new_filename = detect_doc_type(first_page, parts, file_extension)
+
+    new_file = os.path.join(OUT_DIR, new_filename)
+
+    if query_yes_no('Rename {} to {}?'.format(file, new_file)):
+        os.renames(file, new_file)
+
+def unzip(file, directory):
+    import zipfile
+
+    with zipfile.ZipFile(file, 'r') as zip_ref:
+        zip_ref.extractall(directory)
+
+def prepeare_file(file):
+    import mimetypes
+
+    mime, encoding = mimetypes.guess_type(file)
+    if mime == 'application/zip':
+        unzip(file, IN_DIR)
+    elif mime == 'application/pdf':
+        shutil.move(file, IN_DIR)
+    else:
+        print('Unexpected document type: {}'.format(mime))
+
+def dir_walker(directory):
+    f = []
+    for root, dirs, files in os.walk(directory):
+        f.extend(map(lambda f: os.path.join(root, f), files))
+    return f
+
+def collect_files(path):
+    if os.path.isfile(path):
+        return os.path.abspath(path)
+
+    return dir_walker(path)
+
+def main(args):
+    # Create temporary directory and subfolder
+    if not os.path.exists(TMP_DIR):
+        os.makedirs(IN_DIR)
+        os.makedirs(OUT_DIR)
+
+    # Collect all files from paths
+    files = reduce(operator.add, map(collect_files, args.paths))
+
+    # Prepeare files for processing
+    map(prepeare_file, files)
+
+    # Rename files
+    map(rename_file, dir_walker(IN_DIR))  # filter(os.path.isfile, os.listdir(IN_DIR)))
 
 if __name__ == "__main__":
+    # Support Python 2 and 3 input
+    # Default to Python 3's input()
+    get_input = input
+
+    # If this is Python 2, use raw_input()
+    if sys.version_info[:2] <= (2, 7):
+        get_input = raw_input
+
 
     parser = argparse.ArgumentParser(description='Rename Postfinance documents for archiving.')
-    parser.add_argument('files', metavar='<file>', type=text_type, nargs='+',
-                        help='files to rename')
-    parser.add_argument('-o', dest='output', action='store',
-                        default=None,
+    parser.add_argument('paths', metavar='<path>', type=six.text_type, nargs='+',
+                        help='paths to pf documents')
+    parser.add_argument('-o' '--outdir', dest='output', action='store',
+                        default=OUT_DIR,
                         help='destination path')
 
     args = parser.parse_args()
 
-    for path in args.files:
-        first_page = parsePDF(path)[0]  # The doc type is on the first page
-
-        directory, filename = os.path.split(path)
-        basename, file_extension = os.path.splitext(filename)
-        parts = basename.split('_')
-        new_filename = detect_doc_type(first_page, parts, file_extension)
-
-        if args.output is None:
-            output_directory = directory
-        else:
-            output_directory = args.output
-
-        new_path = os.path.join(output_directory, new_filename)
-
-        if query_yes_no('Rename {} to {}?'.format(path, new_path)):
-            os.rename(path, new_path)
+    main(args)
