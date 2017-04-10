@@ -10,12 +10,14 @@ It detects the document type by searching for a keyword in the PDF document (e.g
 
 ## Prequisites
 
-- Python Interpreter (Python 2.7 only, due to pdfminer package)
+- python3
 
 ## Install
 
 ```
-virtualenv ~/.virtualenvs/office-utils
+cd office-utils
+python -m venv venv
+source venv/bin/activate
 pip install -r requirements.txt
 ```
 
@@ -24,7 +26,7 @@ pip install -r requirements.txt
 ### Overview
 
 ```
-(office-utils)❯ /postfinance.py --help
+(office-utils)❯ ./postfinance.py --help
 usage: PROG [-h] {archive,extract,rename,update} ...
 
 positional arguments:

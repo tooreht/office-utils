@@ -1,4 +1,4 @@
 natsort==5.0.2
-pdfminer==20140328
+pdfminer.six==20160614
 ruamel.yaml==0.14.5
 six==1.10.0

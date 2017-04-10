@@ -1,15 +1,10 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from __future__ import print_function
-
 from natsort import natsorted
 from utils import collect_files, read_subcmd_config
 
 import argparse
 import os
-import six
 
 import archive
 import rename
@@ -23,14 +18,14 @@ def update(args):
     args.archive_dir = args.archive_dir or archive_cfg['archive_dir']
 
     if not os.path.isdir(args.archive_dir):
-        raise RuntimeError
+        raise RuntimeError("archive-dir {} is not a directory".format(args.archive_dir))
 
     files = filter(tarfile.is_tarfile, collect_files(args.archive_dir))
     latest = natsorted(files, reverse=True)[0]
-    with open(latest) as f:
-        args.archive = [f]
-        args.extract_dir = None
-        archive.extract(args)
+
+    args.archive = [latest]
+    args.extract_dir = None
+    archive.extract(args)
 
     rename.rename(args)
 
@@ -46,7 +41,7 @@ if __name__ == "__main__":
 
     # create the parser for the "archive" command
     archive_parser = subparsers.add_parser('archive', description='Archive PostFinance documents.')
-    archive_parser.add_argument('path', metavar='<path>', type=six.text_type, nargs=1,
+    archive_parser.add_argument('path', metavar='<path>', type=str, nargs=1,
                         help='path to directory root for archiving')
     archive_parser.add_argument('--archive-dir', dest='archive_dir', action='store',
                         default=None,
@@ -66,7 +61,7 @@ if __name__ == "__main__":
 
     # create the parser for the "rename" command
     rename_parser = subparsers.add_parser('rename', description='Rename PostFinance documents.')
-    rename_parser.add_argument('paths', metavar='<paths>', type=six.text_type, nargs='+',
+    rename_parser.add_argument('paths', metavar='<paths>', type=str, nargs='+',
                         help='paths to PDF documents or zip files')
     rename_parser.add_argument('--confirm', action='store_true', help='Confirm renaming')
     rename_parser.set_defaults(func=rename.rename)
@@ -74,7 +69,7 @@ if __name__ == "__main__":
 
     # create the parser for the "update" command
     update_parser = subparsers.add_parser('update', description='Update (backup, rename and archive) PostFinance documents.')
-    update_parser.add_argument('paths', metavar='<paths>', type=six.text_type, nargs='+',
+    update_parser.add_argument('paths', metavar='<paths>', type=str, nargs='+',
                         help='paths to PDFs documents or zip files')
     update_parser.add_argument('--archive-dir', dest='archive_dir', action='store',
                         default=None,

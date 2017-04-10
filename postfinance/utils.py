@@ -1,22 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from __future__ import print_function
-
 from distutils.util import strtobool
 
 import os
 import ruamel.yaml
 import sys
-import zipfile
-
-# Support Python 2 and 3 input
-# Default to Python 3's input()
-get_input = input
-
-# If this is Python 2, use raw_input()
-if sys.version_info[:2] <= (2, 7):
-    get_input = raw_input
 
 
 def collect_files(path):
@@ -34,7 +21,7 @@ def query_yes_no(question, default=None):
 
     while True:
         try:
-            i = get_input()
+            i = input()
             print(i)
             return strtobool(i.lower())
         except ValueError:
@@ -47,7 +34,3 @@ def read_subcmd_config(subcmd):
     path = os.path.join(subcmd, "config.yml")
     with open(path, 'r') as yml:
         return ruamel.yaml.load(yml, ruamel.yaml.RoundTripLoader)
-
-def unzip(file, directory):
-    with zipfile.ZipFile(file, 'r') as zip_ref:
-        zip_ref.extractall(directory)

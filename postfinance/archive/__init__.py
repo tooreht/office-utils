@@ -1,14 +1,9 @@
 # -*- coding: utf-8 -*-
-from __future__ import absolute_import
-from __future__ import unicode_literals
-from __future__ import print_function
-
 from utils import read_subcmd_config
 
 import datetime
 import os
 import shutil
-import tarfile
 
 
 def archive(args):
@@ -32,8 +27,4 @@ def extract(args):
     if not os.path.exists(extract_dir):
         os.makedirs(extract_dir)
 
-    tar = tarfile.open(fileobj=args.archive[0], mode='r|*')
-    tar.extractall(path=extract_dir)
-    tar.close()
-
-    # shutil.unpack_archive(archive_name, root_dir, cfg['archive_format'])  # python3 only :-(
+    shutil.unpack_archive(args.archive[0], extract_dir, cfg['archive_format'])
