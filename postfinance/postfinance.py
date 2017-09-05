@@ -36,7 +36,8 @@ def update(args):
 if __name__ == "__main__":
     # create the top-level parser
     parser = argparse.ArgumentParser(prog='PROG')
-    subparsers = parser.add_subparsers(dest='subparser_name', help='Available subcommands. Invoke help flag on subcommands to get more information.')
+    subparsers = parser.add_subparsers(dest='subcommand', title='Subcommands', help='Available subcommands. Invoke help flag on subcommands to get more information.')
+    subparsers.required = True
 
 
     # create the parser for the "archive" command
